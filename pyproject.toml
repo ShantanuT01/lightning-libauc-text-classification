@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "libauc_lightning"
+name = "lightning_libauc"
 version = "0.0.1"
 authors = [
     { name="Shantanu Thorat"},
 ]
-description = "LibAUC training library for binary text classifiction"
+description = "LibAUC training library for binary text classification"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
