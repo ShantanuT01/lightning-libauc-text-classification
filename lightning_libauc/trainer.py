@@ -12,6 +12,21 @@ from tqdm import tqdm
 
 class LibAUCTrainer:
     def __init__(self, model, tokenizer, loss_fn, optimizer, needs_sampler=False, needs_index=False, max_len=512, device=None, seed=2024):
+        """
+
+
+        Args:
+            model (_type_): _description_
+            tokenizer (_type_): _description_
+            loss_fn (_type_): _description_
+            optimizer (_type_): _description_
+            needs_sampler (bool, optional): _description_. Defaults to False.
+            needs_index (bool, optional): _description_. Defaults to False.
+            max_len (int, optional): _description_. Defaults to 512.
+            device (_type_, optional): _description_. Defaults to None.
+            seed (int, optional): _description_. Defaults to 2024.
+        """
+        
         self.model = model
         self.tokenizer = tokenizer
         self.loss_fn = loss_fn
