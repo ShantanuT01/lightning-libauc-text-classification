@@ -1,3 +1,5 @@
+"""Experiment runner for stratified LibAUC text classification."""
+
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -15,10 +17,27 @@ from lightning_libauc.trainer import LibAUCTrainer
 
 
 class Experiment:
+    """Run a multi-factor LibAUC training experiment."""
+
     def __init__(self, experiment_config):
+        """Store experiment configuration.
+
+        Args:
+            experiment_config (dict): Experiment settings and dataset paths.
+        """
         self.experiment_config = experiment_config
     
     def compute_metrics(self, predictions, stratify_col, always_include):
+        """Compute AP and AUC metrics for each factor.
+
+        Args:
+            predictions (pd.DataFrame): DataFrame containing targets and model scores.
+            stratify_col (str): Column used for factor grouping.
+            always_include (list[str]): Factors always included for training subsets.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: AP and AUC metric frames.
+        """
         factors = predictions[stratify_col].unique()
         metric_rows = defaultdict(list)
         for factor in factors:
@@ -43,6 +62,11 @@ class Experiment:
 
 
     def run(self):
+        """Execute the full experiment and persist outputs.
+
+        Returns:
+            None
+        """
         experiment_config = self.experiment_config
         
         directory = experiment_config["save_dir"]

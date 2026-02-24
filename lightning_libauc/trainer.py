@@ -1,3 +1,5 @@
+"""Training utilities for LibAUC-based text classification."""
+
 import torch
 from torch.utils.data import DataLoader
 import pandas as pd
@@ -10,21 +12,34 @@ import torch
 
 from tqdm import tqdm
 
-class LibAUCTrainer:
-    def __init__(self, model, tokenizer, loss_fn, optimizer, needs_sampler=False, needs_index=False, max_len=512, device=None, seed=2024):
-        """
 
+class LibAUCTrainer:
+    """Trainer wrapper for LibAUC binary text classification."""
+
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        loss_fn,
+        optimizer,
+        needs_sampler=False,
+        needs_index=False,
+        max_len=512,
+        device=None,
+        seed=2024,
+    ):
+        """Initialize the trainer and set seeds/device.
 
         Args:
-            model (_type_): _description_
-            tokenizer (_type_): _description_
-            loss_fn (_type_): _description_
-            optimizer (_type_): _description_
-            needs_sampler (bool, optional): _description_. Defaults to False.
-            needs_index (bool, optional): _description_. Defaults to False.
-            max_len (int, optional): _description_. Defaults to 512.
-            device (_type_, optional): _description_. Defaults to None.
-            seed (int, optional): _description_. Defaults to 2024.
+            model (transformers.AutoModelForSequenceClassification): Hugging Face model returning logits.
+            tokenizer (transformers.AutoTokenizer): Hugging Face tokenizer for the model.
+            loss_fn (torch.nn.Module): LibAUC-compatible loss function.
+            optimizer (torch.optim.Optimizer): LibAUC optimizer instance.
+            needs_sampler (bool): Whether to use a DualSampler in the loader.
+            needs_index (bool): Whether the loss requires sample indices.
+            max_len (int): Maximum token length for inputs.
+            device (str | torch.device | None): Compute device. Defaults to CUDA when available.
+            seed (int): Random seed for reproducibility.
         """
         
         self.model = model
@@ -41,10 +56,31 @@ class LibAUCTrainer:
         self.needs_sampler=needs_sampler
         set_all_seeds(seed)
   
-    def make_dataloader(self, dataframe,  batch_size, text_col, label_col, shuffle=False, use_sampler=False, sampling_rate=0.5):
-        # make dataset
+    def make_dataloader(
+        self,
+        dataframe,
+        batch_size,
+        text_col,
+        label_col,
+        shuffle=False,
+        use_sampler=False,
+        sampling_rate=0.5,
+    ):
+        """Build a PyTorch DataLoader for the text dataset.
+
+        Args:
+            dataframe (pd.DataFrame): Data containing text and labels.
+            batch_size (int): Batch size.
+            text_col (str): Column name with input text.
+            label_col (str): Column name with labels.
+            shuffle (bool): Whether to shuffle samples.
+            use_sampler (bool): Whether to use LibAUC DualSampler.
+            sampling_rate (float): Positive sampling rate for DualSampler.
+
+        Returns:
+            dataloader (torch.utils.data.DataLoader): Configured data loader.
+        """
         dataset = TextDataset(dataframe, text_col, label_col)        
-        # make dualsampler
         if use_sampler:
             sampler = DualSampler(dataset, batch_size=batch_size, sampling_rate=sampling_rate, random_seed=self.seed)
             loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler, shuffle=shuffle)
@@ -53,8 +89,29 @@ class LibAUCTrainer:
         return loader
 
     
-    def train(self, training_df, epochs, batch_size, text_col, label_col, shuffle=False, sampling_rate=0.5, apply_sigmoid=True):
-       
+    def train(
+        self,
+        training_df,
+        epochs,
+        batch_size,
+        text_col,
+        label_col,
+        shuffle=False,
+        sampling_rate=0.5,
+        apply_sigmoid=True,
+    ):
+        """Train the model for the configured number of epochs.
+
+        Args:
+            training_df (pd.DataFrame): Training data.
+            epochs (int): Number of epochs.
+            batch_size (int): Batch size.
+            text_col (str): Column name with input text.
+            label_col (str): Column name with labels.
+            shuffle (bool): Whether to shuffle samples.
+            sampling_rate (float): Positive sampling rate for DualSampler.
+            apply_sigmoid (bool): Whether to apply sigmoid to logits.
+        """
         training_loader = self.make_dataloader(training_df, batch_size, text_col, label_col, shuffle, use_sampler=self.needs_sampler,sampling_rate=sampling_rate )
 
         self.model.train()
@@ -93,6 +150,17 @@ class LibAUCTrainer:
         return
 
     def evaluate(self, testing_df, text_col, label_col, batch_size=1):
+        """Run inference on a test set and return predictions.
+
+        Args:
+            testing_df (pd.DataFrame): Test data.
+            text_col (str): Column name with input text.
+            label_col (str): Column name with labels.
+            batch_size (int): Batch size.
+
+        Returns:
+            results (pd.DataFrame): Dataframe with `target` and `prediction` columns.
+        """
         testing_loader = self.make_dataloader(testing_df, batch_size, text_col, label_col)
         predictions = list()
         true_labels = list()
@@ -125,9 +193,22 @@ class LibAUCTrainer:
     
 
     def save_model(self, model_path):
+        """Serialize the model to disk.
+
+        Args:
+            model_path (str | Path): Output path for the model artifact.
+        """
         torch.save(self.model, model_path)
 
     def predict(self, texts):
+        """Predict scores for raw text inputs.
+
+        Args:
+            texts (Sequence[str]): Input texts.
+
+        Returns:
+            scores (np.ndarray): Flattened prediction scores.
+        """
         self.model.eval()
         with torch.no_grad():
             inputs = self.tokenizer.batch_encode_plus(

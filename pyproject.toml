@@ -24,4 +24,8 @@ dependencies = [
 ]
 license = {text = "MIT"}
 
-
+[project.optional-dependencies]
+docs = [
+    "mkdocs-material",
+    "mkdocstrings[python]"
+]

@@ -1,0 +1,38 @@
+site_name: Lightning LibAUC
+site_description: LibAUC training helpers for binary text classification.
+site_url: https://example.com
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: cyan
+      accent: teal
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - API:
+      - Trainer: trainer.md
+      - Dataset: dataset.md
+      - Experiment: experiment.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
